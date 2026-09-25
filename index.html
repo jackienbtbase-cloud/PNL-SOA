@@ -54,16 +54,33 @@
 </head>
 <body>
 
-<div class="dashboard-container">
+<!-- 全局登录界面 -->
+<div id="global-login-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh;">
+    <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 320px;">
+        <h2 style="margin-top: 0; color: #0056b3; margin-bottom: 10px;">PNL SOA System</h2>
+        <p style="color: #6c757d; font-size: 14px; margin-bottom: 25px;">Please login to view data.</p>
+        <input type="email" id="login-email" placeholder="Company Email" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+        <input type="password" id="login-password" placeholder="Password" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+        <button onclick="loginUser()" style="width: 100%; padding: 10px; background-color: #0056b3; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;">Login</button>
+    </div>
+</div>
+
+<!-- 主数据面板 (默认隐藏) -->
+<div class="dashboard-container" id="main-app" style="display: none;">
     <div class="header">
         <h1>PNL SOA Dashboard</h1>
         <div class="upload-container">
             <span class="update-time" id="update-time-label">Connecting to Supabase...</span>
-            <button class="reset-btn" onclick="clearCloudData()">Reset Data</button>
-            <label class="file-upload-btn">
+            
+            <!-- 管理员专属按钮，添加了 admin-only 类名用于控制 -->
+            <button class="reset-btn admin-only" onclick="clearCloudData()">Reset Data</button>
+            <label class="file-upload-btn admin-only">
                 Upload Reports
                 <input type="file" id="excel-upload" accept=".xls,.xlsx" multiple onchange="handleFileUpload(event)">
             </label>
+            
+            <!-- 所有人可见的登出按钮 -->
+            <button class="reset-btn" onclick="logoutUser()" style="border-color: #6c757d; color: #6c757d; margin-left: 10px;">Logout</button>
         </div>
     </div>
 
@@ -106,10 +123,86 @@
     // =========================================================================
     const SUPABASE_URL = 'https://yvtujoueyotncbvdlgyf.supabase.co'; 
     const SUPABASE_ANON_KEY = 'sb_publishable_98O37WT0nSZVw2I9128JOg___CX38Dn'; 
+    const ADMIN_EMAIL = 'nbtadmin@gmail.com'; // 请确保这里是你的管理员邮箱
 
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // =========================================================================
+    // 登录与权限控制逻辑
+    // =========================================================================
+    window.onload = async function() {
+        // 页面加载时检查是否已经登录过
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            showDashboard(session.user.email);
+        } else {
+            // 未登录则显示登录界面，隐藏主面板
+            document.getElementById('global-login-screen').style.display = 'flex';
+            document.getElementById('main-app').style.display = 'none';
+        }
+    };
+
+    function showDashboard(userEmail) {
+        document.getElementById('global-login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+
+        // 核心：如果是普通员工邮箱，隐藏管理按钮
+        const adminButtons = document.querySelectorAll('.admin-only');
+        if (userEmail !== ADMIN_EMAIL) {
+            adminButtons.forEach(btn => btn.style.display = 'none');
+        } else {
+            adminButtons.forEach(btn => {
+                // 将 label 设为 inline-block，将 button 设为 inline-block 恢复显示
+                btn.style.display = btn.tagName === 'LABEL' ? 'inline-block' : 'inline-block';
+            });
+        }
+
+        fetchDashboardData();
+    }
+
+    async function loginUser() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const loginBtn = document.querySelector('#global-login-screen button');
+        
+        if (!email || !password) {
+            alert("Please enter both email and password.");
+            return;
+        }
+
+        loginBtn.textContent = "Verifying...";
+        loginBtn.disabled = true;
+        
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
+
+        loginBtn.textContent = "Login";
+        loginBtn.disabled = false;
+
+        if (error) {
+            alert("Login Failed: " + error.message);
+        } else {
+            document.getElementById('login-password').value = '';
+            showDashboard(data.user.email);
+        }
+    }
+
+    async function logoutUser() {
+        await supabaseClient.auth.signOut();
+        document.getElementById('main-app').style.display = 'none';
+        document.getElementById('global-login-screen').style.display = 'flex';
+        // 登出后清理敏感数据展示
+        document.getElementById('table-body').innerHTML = '';
+        document.getElementById('table-footer').innerHTML = '';
+        document.getElementById('dashboard-table').style.display = 'none';
+    }
+
+    // =========================================================================
+    // 数据处理与显示逻辑
+    // =========================================================================
     function formatMoney(amount) {
         if (isNaN(amount)) return "0.00";
         return parseFloat(amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -135,10 +228,6 @@
             reader.readAsArrayBuffer(file);
         });
     }
-
-    window.onload = async function() {
-        fetchDashboardData();
-    };
 
     async function fetchDashboardData() {
         try {
@@ -173,7 +262,7 @@
             } else {
                 document.getElementById('dashboard-table').style.display = 'none';
                 document.getElementById('empty-state').style.display = 'block';
-                document.getElementById('empty-state').innerHTML = "No data available in the cloud. Please click 'Upload Reports' to sync your Excel files.";
+                document.getElementById('empty-state').innerHTML = "No data available in the cloud. Please contact the administrator to upload reports.";
                 document.getElementById('update-time-label').textContent = "Supabase Sync: No Data";
                 document.getElementById('statement-status').textContent = "Pending Upload";
             }
