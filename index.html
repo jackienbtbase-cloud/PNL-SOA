@@ -147,14 +147,19 @@
         document.getElementById('global-login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
 
-        // 核心改动：只有当登录邮箱完全等于管理员邮箱时，才把按钮显示出来
+        // 核心改动：每次登录时，强制重新判断
+        const adminButtons = document.querySelectorAll('.admin-only');
         if (userEmail === ADMIN_EMAIL) {
-            const adminButtons = document.querySelectorAll('.admin-only');
+            // 如果是管理员，显示按钮
             adminButtons.forEach(btn => {
                 btn.style.display = 'inline-block';
             });
+        } else {
+            // 如果是其他人，强制隐藏按钮（解决不刷新直接换号登录的残留问题）
+            adminButtons.forEach(btn => {
+                btn.style.display = 'none';
+            });
         }
-        // 如果是其他人，什么都不用做，因为按钮默认就是彻底隐藏的。
 
         fetchDashboardData();
     }
