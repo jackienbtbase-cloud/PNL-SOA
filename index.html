@@ -123,7 +123,7 @@
     // =========================================================================
     const SUPABASE_URL = 'https://yvtujoueyotncbvdlgyf.supabase.co'; 
     const SUPABASE_ANON_KEY = 'sb_publishable_98O37WT0nSZVw2I9128JOg___CX38Dn'; 
-    const ADMIN_EMAIL = 'nbtadmin@gmail.com'; // 请确保这里是你的管理员邮箱
+    const ADMIN_EMAIL = 'nbtadmin@gmail.com'; 
 
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -150,11 +150,10 @@
         // 核心：如果是普通员工邮箱，隐藏管理按钮
         const adminButtons = document.querySelectorAll('.admin-only');
         if (userEmail !== ADMIN_EMAIL) {
-            adminButtons.forEach(btn => btn.style.display = 'none');
+            adminButtons.forEach(btn => btn.style.display = 'none'); // 隐藏按钮
         } else {
             adminButtons.forEach(btn => {
-                // 将 label 设为 inline-block，将 button 设为 inline-block 恢复显示
-                btn.style.display = btn.tagName === 'LABEL' ? 'inline-block' : 'inline-block';
+                btn.style.display = 'inline-block'; // 显示按钮
             });
         }
 
