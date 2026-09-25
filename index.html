@@ -72,9 +72,9 @@
         <div class="upload-container">
             <span class="update-time" id="update-time-label">Connecting to Supabase...</span>
             
-            <!-- 管理员专属按钮，添加了 admin-only 类名用于控制 -->
-            <button class="reset-btn admin-only" onclick="clearCloudData()">Reset Data</button>
-            <label class="file-upload-btn admin-only">
+            <!-- 默认直接加上 style="display: none;"，让普通员工绝对看不到 -->
+            <button class="reset-btn admin-only" onclick="clearCloudData()" style="display: none;">Reset Data</button>
+            <label class="file-upload-btn admin-only" style="display: none;">
                 Upload Reports
                 <input type="file" id="excel-upload" accept=".xls,.xlsx" multiple onchange="handleFileUpload(event)">
             </label>
@@ -147,15 +147,14 @@
         document.getElementById('global-login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
 
-        // 核心：如果是普通员工邮箱，隐藏管理按钮
-        const adminButtons = document.querySelectorAll('.admin-only');
-        if (userEmail !== ADMIN_EMAIL) {
-            adminButtons.forEach(btn => btn.style.display = 'none'); // 隐藏按钮
-        } else {
+        // 核心改动：只有当登录邮箱完全等于管理员邮箱时，才把按钮显示出来
+        if (userEmail === ADMIN_EMAIL) {
+            const adminButtons = document.querySelectorAll('.admin-only');
             adminButtons.forEach(btn => {
-                btn.style.display = 'inline-block'; // 显示按钮
+                btn.style.display = 'inline-block';
             });
         }
+        // 如果是其他人，什么都不用做，因为按钮默认就是彻底隐藏的。
 
         fetchDashboardData();
     }
