@@ -393,7 +393,6 @@
                     if (rows.length === 0) return;
 
                     // A. Find Date
-                    if (!latestDate) {
                         for (let r = 0; r < Math.min(30, rows.length); r++) {
                             let rowStr = rows[r].join(" ");
                             if (rowStr.includes("Statement of Account as at") || rowStr.includes("as at")) {
@@ -404,7 +403,6 @@
                                 }
                             }
                         }
-                    }
 
                     // B. Find Company Name strictly from the A/C Code Row
                     let company = "Unknown Company";
